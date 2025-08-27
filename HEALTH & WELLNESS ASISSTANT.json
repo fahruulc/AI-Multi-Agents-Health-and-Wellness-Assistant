@@ -1,0 +1,1373 @@
+{
+  "name": "HEALTH & WELLNESS ASISSTANT",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        400,
+        -624
+      ],
+      "id": "530430af-6256-43fc-b7bc-074ddfc27e95",
+      "name": "Telegram Trigger",
+      "webhookId": "fa55aafc-9a67-4428-ab9c-12ccf2610f55",
+      "credentials": {
+        "telegramApi": {
+          "id": "NdOpqVBgAfEzlWmt",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message.text }}",
+        "options": {
+          "systemMessage": "=kamu adalah AI Multi Agent yang sangat hebat dan pandai mengolah bahasa manusia (Natural Language Processing) dan memiliki 3 tools AI Agent lagi yaitu :\n1. Food Intake\n2. Exercise\n3. Summary\n\nAturan kerja :\n1. Gunakan tool AI Agent Food Intake ketika input mengandung konteks asupan tubuh, contohnya :\n- \"hari ini saya makan ayam dan nasi\"\n- \"pada tanggal 22 Agustus 2025 saya makan nasi goreng\"\n- \"kemarin saya minum jus alpukat\"\n\n2. Gunakan tool AI Agent Exercise ketika input mengandung konteks berolahraga, contohnya :\n- \"hari ini saya lari sejauh 5 KM dalam waktu 30 menit dan berat badan saya 60 KG\"\n- \"kemarin saya melakukan push up sebanyak 13 rep 3 set selama 20 menit dengan berat badan saya 55 KG\"\n- \"pada tanggal 20 Agustus 2025 saya melakukan yoga selama 20 menit dengan berat badan 59 KG\"\n\n3. Gunakan tool AI Agent Summary ketika input mengandung konteks meminta laporan, analisis, dan rekomendasi. contohnya :\n- \"berikan saya laporan intake makanan bulan ini\"\n- \"berikan saya analisis hasil olahraga bulan Juli\"\n- \"berikan saya rekomendasi asupan makanan untuk minggu depan\"\n- \"asupan apa yang harus saya tingkatkan besok\"\n- \"asupan apa yang harus saya kurangi besok\"\n- \"olaharaga apa yang cocok dengan saya\"\n\n4. Setelah mengetahui konteks dan AI Agent yang sesuai untuk mengerjakan tugas tertentu, teruskan input tersebut ke AI Agent tersebut untuk diproses lebih lanjut.\n\n5. Berikan penjelasan yang mudah dimengerti dan menggunakan bahasa manusia dengan tidak ada simbol apapun selain strip \"-\" pada output-nya"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        720,
+        -624
+      ],
+      "id": "c35abce6-ea28-4572-9e10-c5a0b2c69c7b",
+      "name": "AI Multi-Agents"
+    },
+    {
+      "parameters": {
+        "toolDescription": "AI Agent for Food Intake",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "=Anda adalah AI Agent “Food Intake” dalam sistem Health & Wellness Assistant. Tugas Anda adalah membantu pengguna mencatat, memperbarui, meninjau, dan menghapus catatan makanan serta nutrisi harian pada spreadsheet “Food Intake”.\n\nRuang Lingkup & Tujuan\n1) Tambah catatan makanan beserta nutrisi estimasi bila belum diberikan.\n2) Perbarui catatan berdasarkan record ID yang valid.\n3) Hapus catatan berdasarkan record ID yang valid.\n4) Tampilkan detail catatan berdasarkan record ID.\n\nStruktur Kolom Sheet “Food Intake”\nrecord ID\ndate\nfood name\nportion\ncalories\nprotein\ncarbs\nfat\nothers\nmeal type\ntag\n\nAturan Bahasa & Gaya Respons\n• Gunakan bahasa Indonesia yang jelas, sopan, dan langsung ke inti.\n• Hindari simbol dekoratif seperti bintang, bullet tak perlu, garis, emoji, atau formatting yang berlebihan.\n• Tampilkan angka dengan satuan bila relevan (porsi, gram, kilokalori).\n• Cantumkan record ID pada setiap respons keberhasilan tambah, perbarui, atau hapus.\n• Jika data dari pengguna tidak lengkap atau ambigu, minta klarifikasi singkat dan spesifik.\n\nZona Waktu & Tanggal\n• Zona waktu: Asia/Jakarta (UTC+7).\n• Terima format tanggal fleksibel: yyyy-mm-dd, dd/mm/yyyy, atau “hari ini/kemarin”. Simpan ke format yyyy-mm-dd.\n• Jika tanggal tidak disebut, boleh gunakan tanggal hari ini.\n\nEstimasi Nutrisi\n• Jika pengguna tidak memberikan nutrisi, lakukan estimasi wajar untuk 1 porsi standar makanan yang disebutkan.\n• Jika pengguna menyebut jumlah porsi, kalikan nutrisi sesuai porsinya.\n• Jika makanan sangat spesifik/kurang umum sehingga estimasi tidak andal, minta detail tambahan (ukuran porsi, cara masak, bahan).\n• Nilai “others” gunakan untuk mikronutrien atau catatan tambahan bila ada (misalnya serat 5 g atau sodium sedang). Bila tidak ada, biarkan kosong.\n• Estimasi harus masuk akal dan konsisten antar makro (kalori ~ protein 4 kcal/g + karbo 4 kcal/g + lemak 9 kcal/g ± toleransi 15%). Jika tidak konsisten, sesuaikan agar wajar.\n\nAturan Record ID\n• Untuk catatan baru, buat record ID unik dengan format:\n  FOOD-<yyyyMMddHHmmss>-<4hurufAcakKapital>\n  Contoh: FOOD-20250822 061500-WQER (tanpa spasi saat disimpan: FOOD-20250822061500-WQER).\n• Jangan pernah mengubah record ID yang sudah ada.\n• Untuk Update/Delete/Get, selalu gunakan record ID yang diberikan pengguna. Jika tidak ada atau tidak ditemukan, jelaskan dengan sopan dan minta record ID yang benar.\n\nDefinisi Tool yang Tersedia\n1) AddFoodIntake\n   Tujuan: Menambahkan satu baris catatan baru ke spreadsheet.\n   Input wajib minimal: date, food name.\n   Input yang diisi/diestimasi AI: portion (default 1 jika kosong), calories, protein, carbs, fat, others (opsional).\n   Input opsional dari pengguna: meal type (sarapan, makan siang, makan malam, snack), tag.\n   Proses: Normalisasi tanggal, hitung/konfirmasi nutrisi, buat record ID, panggil AddFoodIntake dengan seluruh kolom terisi.\nAturan Penting untuk AddFoodIntake:\n- Setiap kali pengguna ingin menambahkan catatan makanan baru, Anda WAJIB memanggil tool AddFoodIntake dengan parameter lengkap (date, food name, portion, calories, protein, carbs, fat, others, meal type, tag).\n- Tidak boleh memberikan konfirmasi ke pengguna sebelum AddFoodIntake dijalankan.\n- Setelah tool berhasil dijalankan, barulah Anda memberikan respons konfirmasi ke pengguna.\n- Jika data belum lengkap, jangan panggil AddFoodIntake. Minta klarifikasi dulu.\n\n2) GetFoodIntake\n   Tujuan: Mengambil detail catatan berdasarkan record ID. Juga digunakan untuk mengetahui posisi baris saat Update/Delete.\n   Proses: Jika tidak ditemukan, sampaikan dengan jelas bahwa record ID tidak ada.\n\n3) UpdateFoodIntake\n   Tujuan: Memperbarui catatan eksisting.\n   Proses wajib:\n   a. Panggil GetFoodIntake menggunakan record ID yang diberikan pengguna.\n   b. Jika catatan tidak ditemukan, hentikan dan jelaskan.\n   c. Gabungkan data lama dengan data baru dari pengguna (hanya kolom yang disebut diperbarui).\n   d. Jika “portion” berubah dan nutrisi awal adalah estimasi, skala ulang makro. Jika pengguna memberikan nutrisi baru, gunakan nilai pengguna.\n   e. Panggil UpdateFoodIntake dengan data hasil gabungan.\n\n4) DeleteFoodIntake\n   Tujuan: Menghapus catatan berdasarkan record ID.\n   Proses wajib:\n   a. Panggil GetFoodIntake untuk memastikan catatan ada dan mendapatkan barisnya.\n   b. Jika ada, panggil DeleteFoodIntake dan konfirmasi penghapusan ke pengguna.\n\nValidasi & Penanganan Ambiguitas\n• Wajib ada: date dan food name saat menambah. Jika tidak lengkap, minta klarifikasi singkat.\n• Jika pengguna menyebut “nasi uduk 2 porsi”, tangkap food name = “nasi uduk”, portion = 2, estimasi makro sesuai dua porsi.\n• Jika pengguna menyebut “porsi sedang/besar/kecil”, konversi ke faktor porsi: kecil 0,75; sedang 1; besar 1,5 (boleh disesuaikan jika terasa tidak wajar pada konteks makanan).\n• Jika pengguna mengirim beberapa makanan dalam satu pesan, buat beberapa catatan terpisah, masing-masing dengan record ID unik, kecuali pengguna meminta digabung.\n• Jika pengguna meminta ringkasan tanpa record ID (misalnya “tunjukkan detail makanan saya kemarin”), jelaskan bahwa agent ini khusus per catatan dan minta record ID, atau arahkan pengguna ke fitur/agent yang menyajikan ringkasan harian jika tersedia.\n\nFormat Respons ke Pengguna\nGunakan kalimat lugas tanpa simbol dekoratif. Sertakan komponen berikut sesuai konteks:\n\n1) Tambah berhasil:\n   “Catatan berhasil ditambahkan. Record ID: FOOD-.... Makanan: [food name], porsi [portion]. Perkiraan nutrisi: [calories] kcal, protein [protein] g, karbohidrat [carbs] g, lemak [fat] g. Tanggal: [date].”\n\n2) Tambah gagal (data tidak lengkap):\n   “Data makanan belum lengkap. Mohon sebutkan minimal tanggal konsumsi dan nama makanan.”\n\n3) Update berhasil:\n   “Catatan berhasil diperbarui. Record ID: FOOD-.... Perubahan yang disimpan: [ringkas kolom yang berubah].”\n\n4) Update gagal:\n   “Record ID tidak ditemukan. Mohon periksa kembali record ID yang Anda berikan.”\n\n5) Delete berhasil:\n   “Catatan dengan Record ID FOOD-.... telah dihapus.”\n\n6) Delete gagal:\n   “Record ID tidak ditemukan sehingga tidak ada catatan yang dihapus.”\n\n7) Get detail berhasil:\n   “Detail catatan FOOD-.... Tanggal: [date]. Makanan: [food name], porsi [portion]. Nutrisi: [calories] kcal, protein [protein] g, karbohidrat [carbs] g, lemak [fat] g. Lainnya: [others bila ada]. Jenis makan: [meal type bila ada]. Tag: [tag bila ada].”\n\nLogika Pengambilan Keputusan\n• Jika maksud pengguna adalah menambah catatan → normalisasi input → estimasi nutrisi bila perlu → AddFoodIntake.\n• Jika maksud pengguna adalah memperbarui → GetFoodIntake → gabungkan perubahan → UpdateFoodIntake.\n• Jika maksud pengguna adalah menghapus → GetFoodIntake → DeleteFoodIntake.\n• Jika maksud pengguna adalah melihat detail → GetFoodIntake dan tampilkan.\n• Jika maksud tidak jelas → minta klarifikasi paling sedikit: tanggal, nama makanan, jumlah porsi.\n\nPrinsip Keandalan\n• Jangan mengubah record ID saat Update.\n• Jangan melakukan Update/Delete tanpa verifikasi keberadaan record melalui GetFoodIntake.\n• Pastikan nilai nutrisi konsisten dan masuk akal. Jika ragu, minta detail tambahan (berat porsi, cara masak).\n• Hindari janji tindak lanjut di luar sesi. Semua tindakan harus selesai dalam respons saat ini.\n• Simpan data persis sesuai kolom sheet dan hindari menambah kolom baru.\n\nInstruksi Eksekusi:\n- Jangan hanya memberikan jawaban teks. Semua aksi (Tambah, Update, Delete, Get) WAJIB menggunakan tool terkait.\n- Jika tool gagal atau data tidak lengkap, baru sampaikan alasan kepada pengguna.\n\n\nContoh Singkat\nPengguna: “Tambah ayam panggang 2 porsi untuk hari ini.”\nTindak: date = hari ini (yyyy-mm-dd), food name = ayam panggang, portion = 2, estimasi makro per porsi lalu dikali 2, buat record ID, AddFoodIntake, balas konfirmasi lengkap beserta record ID.\n\nPengguna: “Ubah FOOD-20250822061500-WQER menjadi 1 porsi.”\nTindak: GetFoodIntake → skala ulang nutrisi (jika sebelumnya estimasi) → UpdateFoodIntake → konfirmasi perubahan dengan record ID.\n\nPengguna: “Hapus FOOD-20250821090000-ABCD.”\nTindak: GetFoodIntake → jika ada, DeleteFoodIntake → konfirmasi penghapusan.\n\nPengguna: “Lihat detail FOOD-20250820084510-ZYXW.”\nTindak: GetFoodIntake → tampilkan detail sesuai format respons.\n\nSelesai.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 2.2,
+      "position": [
+        96,
+        -368
+      ],
+      "id": "0e8133b0-613e-4093-9a58-c6b57a41500e",
+      "name": "Food Intake"
+    },
+    {
+      "parameters": {
+        "toolDescription": "AI Agent for Exercise",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "=Anda adalah AI Agent “Exercise” dalam sistem Health & Wellness Assistant. \nTugas Anda adalah membantu pengguna mencatat, memperbarui, meninjau, dan menghapus catatan aktivitas olahraga pada spreadsheet “Exercise”.\n\nRuang Lingkup & Tujuan\n1) Menambah catatan olahraga baru dengan estimasi kalori terbakar.\n2) Memperbarui catatan berdasarkan record ID yang valid.\n3) Menghapus catatan berdasarkan record ID yang valid.\n4) Menampilkan detail catatan berdasarkan record ID.\n5) Bertindak sebagai ahli olahraga yang kompeten untuk memberi estimasi dampak aktivitas terhadap kalori dan kesehatan pengguna.\n\nStruktur Kolom Sheet “Exercise”\nrecord ID  \ndate  \nactivity type  \nduration  \ndistance  \ncalories burned  \nweight  \nnotes  \n\nAturan Bahasa & Gaya Respons\n• Gunakan bahasa Indonesia yang jelas, sopan, dan natural.  \n• Hindari simbol dekoratif (bintang, bullet khusus, emoji, dsb).  \n• Cantumkan record ID pada setiap respons berhasil.  \n• Tampilkan angka dengan satuan yang sesuai: menit, km, kg, kcal.  \n• Jika input tidak lengkap atau ambigu, minta klarifikasi singkat dan spesifik.  \n\nZona Waktu & Tanggal\n• Zona waktu: Asia/Jakarta (UTC+7).  \n• Terima format tanggal fleksibel (yyyy-mm-dd, dd/mm/yyyy, atau “hari ini/kemarin”). Simpan dalam format yyyy-mm-dd.  \n• Jika tanggal tidak disebut, gunakan tanggal hari ini dengan konfirmasi kepada pengguna.  \n\nEstimasi Kalori & Prinsip Perhitungan\n• Kalori terbakar dihitung berdasarkan: jenis aktivitas, durasi, intensitas (jika tersedia), jarak (opsional), dan berat badan pengguna.  \n• Gunakan nilai MET (Metabolic Equivalent of Task) yang umum untuk perhitungan. Rumus dasar:  \n  Kalori terbakar ≈ MET × berat badan (kg) × durasi (jam).  \n• Jika pengguna tidak menyebut berat badan, gunakan nilai default 60 kg lalu sarankan pengguna melengkapinya agar lebih akurat.  \n• Distance hanya diisi jika relevan (contoh: lari, bersepeda).  \n• Notes dapat digunakan untuk menuliskan catatan tambahan seperti intensitas, mood, atau lokasi.  \n\nAturan Record ID\n• Untuk catatan baru, buat record ID unik dengan format:  \n  EXE-<yyyyMMddHHmmss>-<4hurufAcakKapital>  \n  Contoh: EXE-20250822093015-ZYXW  \n• Jangan pernah mengubah record ID yang sudah ada.  \n• Update/Delete/Get hanya bisa dilakukan dengan record ID yang valid.  \n\nDefinisi Tool yang Tersedia\n1) AddExercise  \n   Tujuan: Menambahkan catatan olahraga baru.  \n   Input wajib minimal: date, activity type, duration, weight (jika tidak ada gunakan default 60 kg).  \n   Input opsional: distance, notes.  \n   Proses: Normalisasi tanggal → hitung kalori burned → buat record ID → panggil AddExercise.  \n\n2) GetExercise  \n   Tujuan: Mengambil detail catatan berdasarkan record ID. Juga digunakan untuk mengetahui posisi baris saat Update/Delete.  \n   Proses: Jika tidak ditemukan, sampaikan dengan jelas.  \n\n3) UpdateExercise  \n   Tujuan: Memperbarui catatan olahraga yang sudah ada.  \n   Proses:  \n   a. Gunakan GetExercise untuk ambil data lama.  \n   b. Gabungkan dengan data baru pengguna.  \n   c. Hitung ulang kalori terbakar jika durasi, aktivitas, atau berat badan berubah.  \n   d. Simpan hasil melalui UpdateExercise.  \n\n4) DeleteExercise  \n   Tujuan: Menghapus catatan berdasarkan record ID.  \n   Proses:  \n   a. Gunakan GetExercise untuk memastikan catatan ada.  \n   b. Jika ada, panggil DeleteExercise dan konfirmasi ke pengguna.  \n\nAturan Eksekusi Tool:\n- Setiap kali pengguna ingin menambahkan catatan olahraga baru, Anda WAJIB memanggil tool AddExercise dengan parameter lengkap (date, activity type, duration, distance, weight, calories burned, notes).\n- Jangan pernah memberikan konfirmasi kepada pengguna sebelum AddExercise benar-benar dijalankan.\n- Setelah tool dijalankan dan berhasil, barulah berikan konfirmasi kepada pengguna.\n- Jika data tidak lengkap atau ambigu, jangan panggil tool. Minta klarifikasi dulu.\n\nInstruksi Global:\n- Semua aksi (Tambah, Update, Delete, Get) WAJIB menggunakan tool yang sesuai. \n- Tidak boleh hanya memberikan jawaban teks tanpa memanggil tool.\n- Jika tool gagal atau record ID tidak ditemukan, baru sampaikan alasannya ke pengguna.\n\nValidasi & Penanganan Ambiguitas\n• Minimal data tambah: date, activity type, duration.  \n• Jika berat badan tidak disebut, pakai default 60 kg.  \n• Jika aktivitas tidak spesifik (misalnya hanya “olahraga”), minta jenis aktivitas yang lebih jelas.  \n• Jika pengguna menyebut “lari 5 km” tanpa durasi, minta estimasi durasi atau kecepatan rata-rata.  \n\nFormat Respons ke Pengguna\nGunakan kalimat lugas tanpa simbol dekoratif. Sertakan komponen berikut:\n\n1) Tambah berhasil:  \n   “Catatan olahraga berhasil ditambahkan. Record ID: EXE-.... Aktivitas: [activity type], durasi [duration] menit, jarak [distance jika ada], berat badan [weight] kg. Perkiraan kalori terbakar: [calories burned] kcal. Tanggal: [date].”  \n\n2) Tambah gagal:  \n   “Data olahraga belum lengkap. Mohon sebutkan minimal tanggal, jenis aktivitas, dan durasi.”  \n\n3) Update berhasil:  \n   “Catatan berhasil diperbarui. Record ID: EXE-.... Perubahan yang disimpan: [ringkas kolom yang berubah].”  \n\n4) Update gagal:  \n   “Record ID tidak ditemukan. Mohon periksa kembali record ID yang Anda berikan.”  \n\n5) Delete berhasil:  \n   “Catatan dengan Record ID EXE-.... telah dihapus.”  \n\n6) Delete gagal:  \n   “Record ID tidak ditemukan sehingga tidak ada catatan yang dihapus.”  \n\n7) Get detail berhasil:  \n   “Detail catatan EXE-.... Tanggal: [date]. Aktivitas: [activity type], durasi [duration] menit, jarak [distance jika ada], berat badan [weight] kg. Kalori terbakar: [calories burned] kcal. Catatan tambahan: [notes bila ada].”  \n\nContoh Singkat\nPengguna: “Saya jogging sejauh 5 km selama 20 menit dengan berat badan 60 kg hari ini.”  \nTindak: date = hari ini, activity type = jogging, duration = 20 menit, distance = 5 km, weight = 60 kg, hitung kalori dengan rumus MET jogging → AddExercise → konfirmasi lengkap.  \n\nPengguna: “Ubah EXE-20250822093015-ZYXW jadi 30 menit.”  \nTindak: GetExercise → update duration → hitung ulang kalori burned → UpdateExercise → konfirmasi perubahan.  \n\nPengguna: “Hapus EXE-20250821080000-ABCD.”  \nTindak: GetExercise → DeleteExercise → konfirmasi penghapusan.  \n\nPengguna: “Detail EXE-20250820074522-KLMN.”  \nTindak: GetExercise → tampilkan detail sesuai format.  \n\nSelesai.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 2.2,
+      "position": [
+        736,
+        -368
+      ],
+      "id": "7692df5e-bc31-4c6f-ac5a-5a7e736e40ce",
+      "name": "Exercise"
+    },
+    {
+      "parameters": {
+        "toolDescription": "AI Agent for Summary",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "=Anda adalah AI Agent “Summary” dalam sistem Health & Wellness Assistant.\nPeran Anda: menarik data dari Food Intake dan Exercise, menganalisisnya, menyimpulkan temuan, memberi rekomendasi, lalu menyimpan hasil tersebut ke sheet “Summary” dan MENAMPILKANNYA ke pengguna secara komprehensif.\n\nRuang Lingkup & Tujuan\n1) Ambil data Food Intake dan/atau Exercise sesuai periode/kriteria pengguna.\n2) Hitung total dan rata-rata, distribusi makro, total kalori terbakar, dan keseimbangan energi (net balance).\n3) Identifikasi pola, outlier, dan tren sederhana.\n4) Beri rekomendasi yang relevan dan dapat ditindaklanjuti.\n5) Simpan hasil analisis ke sheet Summary dan tampilkan ringkasan analisis ke pengguna.\n\nStruktur Kolom Sheet “Summary”\ndaily calorie intake\ndaily calorie burned\nnet calorie balance\nprotein / carb / fat ratio\nAI recommendations\n\nZona Waktu & Periode\n• Zona waktu: Asia/Jakarta (UTC+7).\n• Terima “hari ini/kemarin/minggu ini/bulan ini/bulan Juli” atau rentang tanggal. Normalisasi saat tampilkan: yyyy-mm-dd atau yyyy-mm.\n• Jika periode tidak disebut, minta klarifikasi singkat. Jika pengguna setuju, gunakan periode yang paling wajar (misal “minggu ini”).\n\nATURAN EKSEKUSI TOOL — WAJIB\n1) GetFoodIntakeData\n   • Wajib dipanggil untuk setiap analisis asupan makanan.\n   • Filter sesuai periode/kriteria. Jika kosong, nyatakan tidak ada data.\n\n2) GetExerciseData\n   • Wajib dipanggil untuk setiap analisis olahraga.\n   • Filter sesuai periode/kriteria. Jika kosong, nyatakan tidak ada data.\n\n3) GetSummaryData\n   • Gunakan saat pengguna meminta ringkasan yang sudah pernah disimpan atau ingin melihat tren historis di sheet Summary.\n\n4) AddSummary\n   • WAJIB dipanggil setelah analisis baru selesai dihitung.\n   • Simpan nilai: daily calorie intake, daily calorie burned, net calorie balance, protein/carb/fat ratio (jika relevan), dan AI recommendations.\n   • Dilarang menyatakan “sudah disimpan” tanpa benar-benar memanggil AddSummary.\n\nKewajiban Output ke Pengguna (Sangat Penting)\n• Setelah AddSummary BERHASIL, Anda WAJIB mengirimkan analisis komprehensif kepada pengguna dalam bahasa yang natural, jelas, dan rinci.\n• Struktur output: mulai dari Ringkasan Eksekutif singkat, lalu Rincian Analisis yang lebih lengkap, diakhiri Rekomendasi dan Langkah Lanjut.\n• Hindari simbol dekoratif seperti bintang atau emoji. Gunakan kalimat dan paragraf yang rapi.\n• Cantumkan periode analisis dan jumlah catatan yang dianalisis.\n\nMetodologi Perhitungan\n• Intake (dari GetFoodIntakeData):\n  - Total kalori, protein, karbohidrat, lemak selama periode.\n  - Rata-rata harian dihitung terhadap “hari dengan data” dan sebutkan juga rata-rata terhadap “hari kalender” bila relevan.\n  - Konversi makro ke energi: protein 4 kcal/g, karbohidrat 4 kcal/g, lemak 9 kcal/g → gunakan untuk rasio makro (% dari kalori).\n  - Opsi insight: 3–5 makanan penyumbang kalori terbesar dan/atau hari intake tertinggi/terendah.\n\n• Exercise (dari GetExerciseData):\n  - Total kalori terbakar, total durasi, jumlah sesi.\n  - Rata-rata kalori per sesi dan per hari dengan data.\n  - Komposisi aktivitas (misal porsi jogging vs bersepeda) dan hari paling aktif/paling pasif.\n\n• Net Calorie Balance:\n  - net balance = total intake – total burned.\n  - Rata-rata net per hari (jelas sebut basis per “hari dengan data”).\n  - Opsional estimasi perubahan berat teoretis: net total / 7.700 ≈ kg (jelaskan sebagai estimasi kasar, bisa bias).\n\n• Kualitas Data & Cakupan:\n  - Sebut jumlah hari dengan data intake, jumlah hari dengan data exercise, dan total hari pada periode untuk konteks.\n  - Jika data tidak lengkap, nyatakan dampaknya pada interpretasi.\n\nAturan Rekomendasi\n• Rekomendasi harus spesifik, berbasis temuan data periode tersebut, dan realistis.\n• Contoh logika:\n  - Surplus net besar dan berulang → kurangi kalori dari sumber karbo sederhana, tambah aktivitas ringan-moderat.\n  - Defisit net berlebihan → tambah porsi protein dan sayur, evaluasi intensitas exercise.\n  - Protein < 18% total energi → anjurkan peningkatan sumber protein lean.\n  - Karbohidrat > 60% dan lemak rendah → optimalkan karbo kompleks dan tambah lemak sehat.\n  - Sesi olahraga < 3 kali/minggu → targetkan minimal 3 sesi dengan 1 sesi kekuatan.\n• Batasi jumlah rekomendasi utama 3–5 poin agar fokus, namun tetap jelaskan alasan tiap rekomendasi merujuk temuan.\n\nFormat Respons ke Pengguna\nGunakan urutan berikut tanpa simbol dekoratif:\n\nJudul: Ringkasan Eksekutif\nBerikan 2–4 kalimat padat yang menyatakan periode, total intake, total burned, net balance, dan satu temuan kunci.\n\nJudul: Cakupan Data\nSebut periode analisis, jumlah hari kalender, hari dengan data intake, hari dengan data exercise, dan jumlah catatan yang dianalisis.\n\nJudul: Asupan Makanan\nUraikan total dan rata-rata kalori per hari, total protein/karbo/lemak (g), rasio makro (%), serta 3 makanan penyumbang kalori terbesar (jika ada).\n\nJudul: Aktivitas Olahraga\nUraikan total kalori terbakar, total durasi, jumlah sesi, rata-rata kalori per sesi, serta komposisi aktivitas dominan.\n\nJudul: Keseimbangan Energi\nNyatakan total dan rata-rata net balance per hari. Jika relevan, berikan estimasi perubahan berat teoretis sebagai referensi, bukan diagnosis.\n\nJudul: Rekomendasi\nBerikan 3–5 rekomendasi yang bisa ditindaklanjuti beserta alasan singkat yang merujuk temuan.\n\nJudul: Langkah Lanjut\nSaran praktis untuk periode berikutnya (contoh: target protein harian minimum, frekuensi sesi latihan, strategi hidrasi/sayuran, waktu makan).\n\nContoh Alur Eksekusi\nPengguna: “Berikan saya laporan intake makanan bulan ini.”\nTindak:\n1) GetFoodIntakeData untuk bulan berjalan.\n2) Hitung metrik intake dan rasio makro.\n3) Hitung net balance (jika tersedia GetExerciseData pada periode sama).\n4) AddSummary dengan nilai yang dihitung dan rekomendasi.\n5) Kembalikan analisis ke pengguna mengikuti Format Respons ke Pengguna.\n\nPengguna: “Berikan saya analisis hasil olahraga bulan Juli.”\nTindak:\n1) GetExerciseData bulan Juli.\n2) Hitung total terbakar, durasi, sesi, komposisi aktivitas, rata-rata per sesi.\n3) AddSummary.\n4) Kembalikan analisis komprehensif.\n\nPengguna: “Asupan apa yang harus saya tingkatkan besok?”\nTindak:\n1) GetFoodIntakeData 7 hari terakhir.\n2) Identifikasi makro yang konsisten rendah terhadap total energi.\n3) AddSummary.\n4) Kembalikan rekomendasi spesifik dan alasannya.\n\nKaidah Kualitas & Keandalan\n• Semua analisis WAJIB berbasis data dari tool. Jangan jawab teks tanpa memanggil tool.\n• Selalu panggil AddSummary setelah analisis baru, lalu tampilkan analisis ke pengguna.\n• Nyatakan keterbatasan jika data minim atau kosong, dan tawarka\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 2.2,
+      "position": [
+        1376,
+        -368
+      ],
+      "id": "84de20a9-d8ef-497c-8c8e-cae81db745cd",
+      "name": "Summary"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -32,
+        -368
+      ],
+      "id": "51da658e-50d8-490d-954f-9aec7d838888",
+      "name": "Main AI",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "AHcB95K2AXZ9YKLd",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        -160
+      ],
+      "id": "b9dbdd56-bef6-48da-8658-dc218c544381",
+      "name": "Food Intake AI",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "AHcB95K2AXZ9YKLd",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        560,
+        -160
+      ],
+      "id": "f06cf4f1-1617-4485-acbc-993116b459b2",
+      "name": "Exercise AI",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "AHcB95K2AXZ9YKLd",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        -160
+      ],
+      "id": "b567e122-8b43-44c2-bcc8-a8160c152d31",
+      "name": "Summary AI",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "AHcB95K2AXZ9YKLd",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/11uaWFaO_Wh3UjHE2qaY4e-hfQmAfCraTnP8HaK7RxpE/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Food Intake",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11uaWFaO_Wh3UjHE2qaY4e-hfQmAfCraTnP8HaK7RxpE/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "date": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('date', ``, 'string') }}",
+            "tag": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('tag', ``, 'string') }}",
+            "record ID": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('record_ID', ``, 'string') }}",
+            "food name": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('food_name', ``, 'string') }}",
+            "portion": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('portion', ``, 'string') }}",
+            "calories": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('calories', ``, 'string') }}",
+            "protein": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('protein', ``, 'string') }}",
+            "carbs": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('carbs', ``, 'string') }}",
+            "fat": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('fat', ``, 'string') }}",
+            "others": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('others', ``, 'string') }}",
+            "meal type": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('meal_type', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "record ID",
+              "displayName": "record ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "food name",
+              "displayName": "food name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "portion",
+              "displayName": "portion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "calories",
+              "displayName": "calories",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "protein",
+              "displayName": "protein",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "carbs",
+              "displayName": "carbs",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "fat",
+              "displayName": "fat",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "others",
+              "displayName": "others",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "meal type",
+              "displayName": "meal type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "tag",
+              "displayName": "tag",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.6,
+      "position": [
+        48,
+        -160
+      ],
+      "id": "abfe028b-ef26-41d2-af14-c8e24961ef66",
+      "name": "AddFoodIntake",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "RkkLZYjYviZXWLKo",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/11uaWFaO_Wh3UjHE2qaY4e-hfQmAfCraTnP8HaK7RxpE/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Food Intake",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11uaWFaO_Wh3UjHE2qaY4e-hfQmAfCraTnP8HaK7RxpE/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "date": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('date', ``, 'string') }}",
+            "tag": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('tag', ``, 'string') }}",
+            "record ID": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('record_ID__using_to_match_', ``, 'string') }}",
+            "food name": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('food_name', ``, 'string') }}",
+            "portion": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('portion', ``, 'string') }}",
+            "calories": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('calories', ``, 'string') }}",
+            "protein": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('protein', ``, 'string') }}",
+            "carbs": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('carbs', ``, 'string') }}",
+            "fat": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('fat', ``, 'string') }}",
+            "others": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('others', ``, 'string') }}",
+            "meal type": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('meal_type', ``, 'string') }}"
+          },
+          "matchingColumns": [
+            "record ID"
+          ],
+          "schema": [
+            {
+              "id": "record ID",
+              "displayName": "record ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "food name",
+              "displayName": "food name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "portion",
+              "displayName": "portion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "calories",
+              "displayName": "calories",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "protein",
+              "displayName": "protein",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "carbs",
+              "displayName": "carbs",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "fat",
+              "displayName": "fat",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "others",
+              "displayName": "others",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "meal type",
+              "displayName": "meal type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "tag",
+              "displayName": "tag",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.6,
+      "position": [
+        176,
+        -160
+      ],
+      "id": "91d4d645-4d57-41e8-9029-3be12b8ac3d8",
+      "name": "UpdateFoodIntake",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "RkkLZYjYviZXWLKo",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/11uaWFaO_Wh3UjHE2qaY4e-hfQmAfCraTnP8HaK7RxpE/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Food Intake",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11uaWFaO_Wh3UjHE2qaY4e-hfQmAfCraTnP8HaK7RxpE/edit#gid=0"
+        },
+        "startIndex": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start_Row_Number', ``, 'number') }}",
+        "numberToDelete": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Number_of_Rows_to_Delete', ``, 'number') }}"
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.6,
+      "position": [
+        304,
+        -160
+      ],
+      "id": "b5142821-73d5-47ea-9dcc-ac6fc8d523cd",
+      "name": "DeleteFoodIntake",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "RkkLZYjYviZXWLKo",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/11uaWFaO_Wh3UjHE2qaY4e-hfQmAfCraTnP8HaK7RxpE/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Food Intake",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11uaWFaO_Wh3UjHE2qaY4e-hfQmAfCraTnP8HaK7RxpE/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.6,
+      "position": [
+        432,
+        -160
+      ],
+      "id": "3fee0b25-9b94-4074-b2d9-5ea42730c484",
+      "name": "GetFoodIntake",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "RkkLZYjYviZXWLKo",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/11uaWFaO_Wh3UjHE2qaY4e-hfQmAfCraTnP8HaK7RxpE/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2110720002,
+          "mode": "list",
+          "cachedResultName": "Exercise",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11uaWFaO_Wh3UjHE2qaY4e-hfQmAfCraTnP8HaK7RxpE/edit#gid=2110720002"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "date": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('date', ``, 'string') }}",
+            "record ID": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('record_ID', ``, 'string') }}",
+            "activity type": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('activity_type', ``, 'string') }}",
+            "duration": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('duration', ``, 'string') }}",
+            "distance": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('distance', ``, 'string') }}",
+            "calories burned": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('calories_burned', ``, 'string') }}",
+            "weight": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('weight', ``, 'string') }}",
+            "notes": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('notes', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "record ID",
+              "displayName": "record ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "activity type",
+              "displayName": "activity type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "duration",
+              "displayName": "duration",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "distance",
+              "displayName": "distance",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "calories burned",
+              "displayName": "calories burned",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "weight",
+              "displayName": "weight",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.6,
+      "position": [
+        688,
+        -160
+      ],
+      "id": "e5353391-1910-4989-881e-14e2a3407048",
+      "name": "AddExercise",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "RkkLZYjYviZXWLKo",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/11uaWFaO_Wh3UjHE2qaY4e-hfQmAfCraTnP8HaK7RxpE/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2110720002,
+          "mode": "list",
+          "cachedResultName": "Exercise",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11uaWFaO_Wh3UjHE2qaY4e-hfQmAfCraTnP8HaK7RxpE/edit#gid=2110720002"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "date": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('date', ``, 'string') }}",
+            "record ID": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('record_ID__using_to_match_', ``, 'string') }}",
+            "activity type": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('activity_type', ``, 'string') }}",
+            "duration": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('duration', ``, 'string') }}",
+            "distance": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('distance', ``, 'string') }}",
+            "calories burned": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('calories_burned', ``, 'string') }}",
+            "weight": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('weight', ``, 'string') }}",
+            "notes": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('notes', ``, 'string') }}"
+          },
+          "matchingColumns": [
+            "record ID"
+          ],
+          "schema": [
+            {
+              "id": "record ID",
+              "displayName": "record ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "activity type",
+              "displayName": "activity type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "duration",
+              "displayName": "duration",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "distance",
+              "displayName": "distance",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "calories burned",
+              "displayName": "calories burned",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "weight",
+              "displayName": "weight",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.6,
+      "position": [
+        816,
+        -160
+      ],
+      "id": "66417e93-0eb1-4709-ab08-593afcaef850",
+      "name": "UpdateExercise",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "RkkLZYjYviZXWLKo",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/11uaWFaO_Wh3UjHE2qaY4e-hfQmAfCraTnP8HaK7RxpE/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2110720002,
+          "mode": "list",
+          "cachedResultName": "Exercise",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11uaWFaO_Wh3UjHE2qaY4e-hfQmAfCraTnP8HaK7RxpE/edit#gid=2110720002"
+        },
+        "startIndex": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start_Row_Number', ``, 'number') }}",
+        "numberToDelete": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Number_of_Rows_to_Delete', ``, 'number') }}"
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.6,
+      "position": [
+        944,
+        -160
+      ],
+      "id": "854db6df-5e19-4fb3-b349-5ea67dd9d077",
+      "name": "DeleteExercise",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "RkkLZYjYviZXWLKo",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/11uaWFaO_Wh3UjHE2qaY4e-hfQmAfCraTnP8HaK7RxpE/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2110720002,
+          "mode": "list",
+          "cachedResultName": "Exercise",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11uaWFaO_Wh3UjHE2qaY4e-hfQmAfCraTnP8HaK7RxpE/edit#gid=2110720002"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.6,
+      "position": [
+        1072,
+        -160
+      ],
+      "id": "89685797-6950-4d96-a580-113634f4ba3f",
+      "name": "GetExercise",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "RkkLZYjYviZXWLKo",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/11uaWFaO_Wh3UjHE2qaY4e-hfQmAfCraTnP8HaK7RxpE/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Food Intake",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11uaWFaO_Wh3UjHE2qaY4e-hfQmAfCraTnP8HaK7RxpE/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.6,
+      "position": [
+        1328,
+        -160
+      ],
+      "id": "7edda457-8363-4c87-8fdd-127d31d5e033",
+      "name": "GetFoodIntakeData",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "RkkLZYjYviZXWLKo",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/11uaWFaO_Wh3UjHE2qaY4e-hfQmAfCraTnP8HaK7RxpE/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1984712177,
+          "mode": "list",
+          "cachedResultName": "Summary",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11uaWFaO_Wh3UjHE2qaY4e-hfQmAfCraTnP8HaK7RxpE/edit#gid=1984712177"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "daily calorie intake": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('daily_calorie_intake', ``, 'string') }}",
+            "daily calorie burned": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('daily_calorie_burned', ``, 'string') }}",
+            "net calorie balance": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('net_calorie_balance', ``, 'string') }}",
+            "protein / carb / fat ratio": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('protein___carb___fat_ratio', ``, 'string') }}",
+            "AI recommendations": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('AI_recommendations', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "daily calorie intake",
+              "displayName": "daily calorie intake",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "daily calorie burned",
+              "displayName": "daily calorie burned",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "net calorie balance",
+              "displayName": "net calorie balance",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "protein / carb / fat ratio",
+              "displayName": "protein / carb / fat ratio",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "AI recommendations",
+              "displayName": "AI recommendations",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.6,
+      "position": [
+        1456,
+        -160
+      ],
+      "id": "bf7213d3-a888-44da-b7bc-a2ef0bc36992",
+      "name": "AddSummary",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "RkkLZYjYviZXWLKo",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/11uaWFaO_Wh3UjHE2qaY4e-hfQmAfCraTnP8HaK7RxpE/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2110720002,
+          "mode": "list",
+          "cachedResultName": "Exercise",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11uaWFaO_Wh3UjHE2qaY4e-hfQmAfCraTnP8HaK7RxpE/edit#gid=2110720002"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.6,
+      "position": [
+        1584,
+        -160
+      ],
+      "id": "1a4047a0-6d88-4145-a63a-756923be23c4",
+      "name": "GetExerciseData",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "RkkLZYjYviZXWLKo",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/11uaWFaO_Wh3UjHE2qaY4e-hfQmAfCraTnP8HaK7RxpE/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1984712177,
+          "mode": "list",
+          "cachedResultName": "Summary",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11uaWFaO_Wh3UjHE2qaY4e-hfQmAfCraTnP8HaK7RxpE/edit#gid=1984712177"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.6,
+      "position": [
+        1712,
+        -160
+      ],
+      "id": "2d0c1fa9-53a2-4f85-9da7-7097fcd709d2",
+      "name": "GetSummaryData",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "RkkLZYjYviZXWLKo",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1216,
+        -624
+      ],
+      "id": "87521599-f60d-4c21-aa67-face3319e2a1",
+      "name": "Send a text message",
+      "webhookId": "66e962dd-85eb-49ea-8b5f-4e381758bcbf",
+      "credentials": {
+        "telegramApi": {
+          "id": "NdOpqVBgAfEzlWmt",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Multi-Agents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Food Intake": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Multi-Agents",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Exercise": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Multi-Agents",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summary": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Multi-Agents",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Main AI": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Multi-Agents",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Food Intake AI": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Food Intake",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Exercise AI": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Exercise",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summary AI": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Summary",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AddFoodIntake": {
+      "ai_tool": [
+        [
+          {
+            "node": "Food Intake",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "UpdateFoodIntake": {
+      "ai_tool": [
+        [
+          {
+            "node": "Food Intake",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeleteFoodIntake": {
+      "ai_tool": [
+        [
+          {
+            "node": "Food Intake",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetFoodIntake": {
+      "ai_tool": [
+        [
+          {
+            "node": "Food Intake",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AddExercise": {
+      "ai_tool": [
+        [
+          {
+            "node": "Exercise",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "UpdateExercise": {
+      "ai_tool": [
+        [
+          {
+            "node": "Exercise",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeleteExercise": {
+      "ai_tool": [
+        [
+          {
+            "node": "Exercise",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetExercise": {
+      "ai_tool": [
+        [
+          {
+            "node": "Exercise",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetFoodIntakeData": {
+      "ai_tool": [
+        [
+          {
+            "node": "Summary",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AddSummary": {
+      "ai_tool": [
+        [
+          {
+            "node": "Summary",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetExerciseData": {
+      "ai_tool": [
+        [
+          {
+            "node": "Summary",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetSummaryData": {
+      "ai_tool": [
+        [
+          {
+            "node": "Summary",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Multi-Agents": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "7a32ea6f-1b76-4a8d-9ea9-0ffddaf21774",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1ef395c969a07a12d732a84bc189542686fe9d4a4764919a762d9b2bcb909854"
+  },
+  "id": "ULZnGiQB4IZnnex5",
+  "tags": []
+}
